@@ -1,5 +1,6 @@
 import csv
 import os
+import os.path
 from datetime import date
 import shutil
 
@@ -108,6 +109,14 @@ def init_logs(pid):
     with open(root + '/fert.csv', 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=["date", "notes", "id"])
         writer.writeheader()
+
+def init():
+    os.makedirs('plants/', exist_ok=True)
+    os.makedirs('plants/archive/', exist_ok=True)
+    if not os.path.isfile('plants/plants.csv'):
+        with open('plants/plants.csv', 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=["id", "name", "descr_1", "descr_2", "water_rec_txt", "water_rec_days", "fert_rec_txt", "fert_rec_days", "is_active"])
+            writer.writeheader()
 
 
 def add_plants_interactive():
@@ -333,6 +342,7 @@ def id_from_choice_or_prompt(choice):
 
 
 def interactive():
+    init()
     print("Welcome to Daniel's Plants - the command-line interface")
     while True:
         choice = prompt("What to do? List plants, view plant, add plant(s), water a plant, fertilize a plant, exit?").lower()

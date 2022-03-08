@@ -297,17 +297,7 @@ def open_config():
 def open_about():
     pass
 
-
-# def update_canvas():
-#     # canvas.create_window((0, 0), window=main_frame, anchor="nw")
-#     canvas.configure(scrollregion=canvas.bbox("all"))
-#     main_frame.update_idletasks()
-#     if main_frame.winfo_reqwidth() != canvas.winfo_width():
-#         # update the canvas's width to fit the inner frame
-#         canvas.config(width=main_frame.winfo_reqwidth())
-#     if main_frame.winfo_reqheight() != canvas.winfo_height():
-#         # update the canvas's width to fit the inner frame
-#         canvas.config(height=main_frame.winfo_reqheight())
+dansplants.init()
 
 root = Tk()
 root.title("Dansplants")
