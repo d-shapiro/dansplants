@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkcalendar import *
+import webbrowser
 import dansplants
 from datetime import date
 from PIL import ImageTk,Image,ImageOps,ImageDraw,ImageChops
@@ -294,8 +295,28 @@ def open_config():
     pass
 
 
-def open_about():
-    pass
+class AboutWindow(Toplevel):
+    def __init__(self, master, **kwargs):
+        Toplevel.__init__(self, master, **kwargs)
+        self.focus_set()
+        master.attributes('-disabled', True)
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.title("About Dansplants")
+        self.iconbitmap("assets/icon.ico")
+        Label(self, text="Dansplants", font=("", 14)).grid(row=0, column=0, padx=10, pady=16)
+        Label(self, text="Copyright © 2022 Daniel Shapiro").grid(row=1, column=0, padx=10)
+        Label(self, text="Version " + dansplants.get_version()).grid(row=2, column=0, padx=10, pady=2)
+
+    def close(self, event=None):
+        self.master.attributes('-disabled', False)
+        self.destroy()
+
+def open_about(mainwin):
+    AboutWindow(mainwin).transient(mainwin)
+
+def open_github():
+    webbrowser.open_new("https://github.com/d-shapiro/dansplants")
+
 
 dansplants.init()
 
@@ -308,6 +329,20 @@ fh_windows = {}
 default_pic = ImageTk.PhotoImage(image_in_circle(Image.open("assets/default_pic.png")))
 # necessary for very stupid reasons
 pics_list = []
+
+menubar = Menu(root)
+filemenu = Menu(menubar, tearoff=0)
+# filemenu.add_command(label="Configure Plants", command=open_config)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=root.quit)
+menubar.add_cascade(label="File", menu=filemenu)
+
+helpmenu = Menu(menubar, tearoff=0)
+helpmenu.add_command(label="Github", command=open_github)
+helpmenu.add_command(label="About", command=lambda mainwin=root: open_about(mainwin))
+menubar.add_cascade(label="Help", menu=helpmenu)
+
+root.config(menu=menubar)
 
 outer_frame = Frame(root)
 outer_frame.pack(fill=BOTH, expand=1, padx=6, pady=6)

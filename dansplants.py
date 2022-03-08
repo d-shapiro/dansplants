@@ -5,6 +5,10 @@ from datetime import date
 import shutil
 
 
+def get_version():
+    with open("version") as verfile:
+        return verfile.read().strip()
+
 class Plant:
     def __init__(self, dic):
         self.id = str_to_int_or_zero(dic["id"])
