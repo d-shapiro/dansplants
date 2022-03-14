@@ -1,5 +1,7 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
+from tkinter import filedialog
 from tkcalendar import *
 import webbrowser
 import dansplants
@@ -86,8 +88,8 @@ def water_dialog_click(ref):
     dialog_click(ref, False)
 
 
-def image_in_circle(im):
-    im = im.resize((64, 64)).convert("RGBA")
+def image_in_circle(im, size=64):
+    im = im.resize((size, size)).convert("RGBA")
     bigsize = (im.size[0] * 3, im.size[1] * 3)
     border = Image.new('RGBA', bigsize, (0, 0, 0, 255))
     ImageDraw.Draw(border).ellipse((6, 6) + (bigsize[0]-6, bigsize[1]-6), fill=(0,0,0,0))
@@ -264,6 +266,16 @@ def get_details_frame(ref, expand_button):
     return det_frame
 
 
+def get_plant_pic(pid, pics_list, default_pic, size=64):
+    pic = default_pic
+    try:
+        sq_image = Image.open("plants/" + str(pid) + "/pic.png")
+        pic = ImageTk.PhotoImage(image_in_circle(sq_image, size))
+        pics_list.append(pic)
+    except FileNotFoundError:
+        pass
+    return pic
+
 
 def place_expand_button(expand_button):
     expand_button.grid(row=2, column=2, padx=16)
@@ -279,37 +291,217 @@ def collapse(det_frame, expand_button):
     det_frame.grid_remove()
 
 
-def _bound_to_mousewheel(event):
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-
-def _unbound_to_mousewheel(event):
-    canvas.unbind_all("<MouseWheel>")
-
-
-def _on_mousewheel(event):
-    canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-
-
-def open_config():
-    pass
-
-
-class AboutWindow(Toplevel):
+class PopUpWindow(Toplevel):
     def __init__(self, master, **kwargs):
         Toplevel.__init__(self, master, **kwargs)
         self.focus_set()
         master.attributes('-disabled', True)
         self.protocol("WM_DELETE_WINDOW", self.close)
-        self.title("About Dansplants")
         self.iconbitmap("assets/icon.ico")
-        Label(self, text="Dansplants", font=("", 14)).grid(row=0, column=0, padx=10, pady=16)
-        Label(self, text="Copyright © 2022 Daniel Shapiro").grid(row=1, column=0, padx=10)
-        Label(self, text="Version " + dansplants.get_version()).grid(row=2, column=0, padx=10, pady=2)
 
     def close(self, event=None):
         self.master.attributes('-disabled', False)
         self.destroy()
+
+
+class EditWindow(PopUpWindow):
+    def __init__(self, master, plant, **kwargs):
+        PopUpWindow.__init__(self, master, **kwargs)
+        self.is_new = plant.id == 0
+        self.pid = dansplants.next_id() if self.is_new else plant.id
+        if (self.is_new):
+            self.title("Add New Plant")
+        else:
+            self.title("Edit Plant " + str(self.pid))
+
+        self.new_pic_filename = ""
+        self.pics = []
+        pic = DEFAULT_PIC_64 if self.is_new else get_plant_pic(self.pid, self.pics, DEFAULT_PIC_64, size=64)
+        pic_label = Label(self, image=pic)
+        choose_pic_btn = Button(self, text="Choose new image", command=self.choose_pic)
+        name_label = Label(self, text="Name")
+        descr1_label = Label(self, text="Short description (e.g. genus/species)")
+        descr2_label = Label(self, text="Additional description")
+        waterRecText_label = Label(self, text="Watering recommendations")
+        waterRecNum_label = Label(self, text="Approximate days between waterings")
+        fertRecText_label = Label(self, text="Fertilizing recommendations")
+        fertRecNum_label = Label(self, text="Approximate days between fertilizing")
+        self.name = Entry(self, width=60)
+        self.descr1 = Entry(self, width=60)
+        self.descr2 = Text(self, width=45, height=4)
+        self.waterRecText = Text(self, width=45, height=4)
+        self.waterRecNum = Entry(self, width=8)
+        self.fertRecText = Text(self, width=45, height=4)
+        self.fertRecNum = Entry(self, width=8)
+        if not self.is_new:
+            self.name.insert(0, plant.name)
+            self.descr1.insert(0, plant.descr1)
+            self.descr2.insert(1.0, plant.descr2)
+            self.waterRecText.insert(1.0, plant.waterRecTxt)
+            self.waterRecNum.insert(0, plant.waterRecDays)
+            self.fertRecText.insert(1.0, plant.fertRecTxt)
+            self.fertRecNum.insert(0, plant.fertRecDays)
+
+        button_frame = Frame(self)
+        cancel_btn = Button(button_frame, text="Cancel", command=self.close)
+        submit_btn = Button(button_frame, text="Save", command=self.save_entry)
+
+        pic_label.grid(row=0, column=0, rowspan=2, sticky=E, padx=10, pady=10)
+        choose_pic_btn.grid(row=1, column=1, sticky=W, padx=10)
+        self.name.grid(row=2, column=1, padx=10, sticky=W)
+        name_label.grid(row=2, column=0, padx=10, sticky=E)
+        self.descr1.grid(row=3, column=1, padx=10, sticky=W)
+        descr1_label.grid(row=3, column=0, padx=10, sticky=E)
+        self.descr2.grid(row=4, column=1, padx=10, sticky=W)
+        descr2_label.grid(row=4, column=0, padx=10, sticky=E)
+        self.waterRecText.grid(row=5, column=1, padx=10, sticky=W)
+        waterRecText_label.grid(row=5, column=0, padx=10, sticky=E)
+        self.waterRecNum.grid(row=6, column=1, padx=10, sticky=W)
+        waterRecNum_label.grid(row=6, column=0, padx=10, sticky=E)
+        self.fertRecText.grid(row=7, column=1, padx=10, sticky=W)
+        fertRecText_label.grid(row=7, column=0, padx=10, sticky=E)
+        self.fertRecNum.grid(row=8, column=1, padx=10, sticky=W)
+        fertRecNum_label.grid(row=8, column=0, padx=10, sticky=E)
+        button_frame.grid(row=9, column=0, columnspan=2, pady=10, padx=10)
+        cancel_btn.grid(row=0, column=0, padx=10)
+        submit_btn.grid(row=0, column=1, padx=10)
+
+    def choose_pic(self):
+        filename = filedialog.askopenfilename(parent=self, initialdir="/",
+                                                           title="Select an image file (preferably square)",
+                                                           filetypes=(("png files", ".png"),))
+        if len(filename) > 0:
+            sq_image = Image.open(filename)
+            pic = ImageTk.PhotoImage(image_in_circle(sq_image, 64))
+            self.pics.append(pic)
+            pic_label = Label(self, image=pic)
+            pic_label.grid(row=0, column=0, rowspan=2, sticky=E, padx=10, pady=10)
+            self.new_pic_filename = filename
+
+    def save_entry(self):
+        name_val = self.name.get().strip()
+        descr1_val = self.descr1.get().strip()
+        descr2_val = self.descr2.get(1.0, END).strip()
+        waterRecText_val = self.waterRecText.get(1.0, END).strip()
+        fertRecText_val = self.fertRecText.get(1.0, END).strip()
+        waterRecNum_val = self.waterRecNum.get().strip()
+        fertRecNum_val = self.fertRecNum.get().strip()
+
+        if len(name_val) <= 0:
+            messagebox.showwarning("", "Please enter a name for your plant", parent=self)
+        elif len(waterRecNum_val) > 0 and not is_nonneg_num(waterRecNum_val):
+            messagebox.showwarning("", "Approximate watering interval should be numeric or left blank", parent=self)
+        elif len(fertRecNum_val) > 0 and not is_nonneg_num(fertRecNum_val):
+            messagebox.showwarning("", "Approximate fertilizing interval should be numeric or left blank", parent=self)
+        else:
+            plant_dic = {"id": str(self.pid), "name": name_val, "descr_1": descr1_val,
+                         "descr_2": descr2_val, "water_rec_txt": waterRecText_val, "fert_rec_txt": fertRecText_val,
+                         "water_rec_days": waterRecNum_val, "fert_rec_days": fertRecNum_val, "is_active": "True"}
+            if len(self.new_pic_filename) > 0:
+                dansplants.set_plant_pic(self.pid, self.new_pic_filename)
+            if self.is_new:
+                dansplants.add_plants([plant_dic])
+                self.master.add_plant_frame(dansplants.Plant(plant_dic))
+                self.master.scroll_to_bottom()
+            else:
+                dansplants.update_plant(plant_dic)
+                self.master.update_plant_frame(dansplants.Plant(plant_dic))
+            self.close()
+
+
+def is_nonneg_num(s):
+    try:
+        return int(s) >= 0
+    except ValueError:
+        return False
+
+
+class ConfigWindow(PopUpWindow):
+    def __init__(self, master, **kwargs):
+        PopUpWindow.__init__(self, master, **kwargs)
+        self.title("Configure Plants")
+        self.geometry("550x900")
+        self.pics = []
+        self.frames = {}
+        self.id_labels = {}
+        self.row_num = 0
+        self.main_frame, self.canvas = setup_scrollable_frame(self)
+        for plant in dansplants.get_plant_list():
+            if plant.isActive:
+                self.add_plant_frame(plant)
+        button_frame = Frame(self)
+        button_frame.pack(pady=8)
+        add_button = Button(button_frame, text="Add New Plant", command=self.add_clicked, bg="#a2ff96", font=("", 8, "bold"), padx=4, pady=4)
+        add_button.grid(row=0, column=0, padx=20)
+        done_button = Button(button_frame, text="Done", command=self.close, font=("", 8), padx=4, pady=4)
+        done_button.grid(row=0, column=1, padx=20)
+
+    def fill_plant_frame(self, frame, plant):
+        name = Label(frame, text=plant.name, font=("", 11, "bold"))
+        descr = Label(frame, text=plant.descr1, font=("", 10, "italic"))
+        edit_button = Button(frame, text="Edit", command=lambda plant=plant: self.edit_clicked(plant), bg="#ffcb96",
+                             font=("", 8, "bold"), padx=4, pady=4)
+        archive_button = Button(frame, text="Archive", command=lambda plant=plant: self.archive_clicked(plant),
+                                bg="#ff96a2", font=("", 8, "bold"), padx=4, pady=4)
+        pic = get_plant_pic(plant.id, self.pics, DEFAULT_PIC_32, size=32)
+        pic_label = Label(frame, image=pic)
+
+        pic_label.grid(row=0, column=0, rowspan=2, padx=4)
+        name.grid(row=0, column=1, sticky=W)
+        descr.grid(row=1, column=1, sticky=N + W, padx=10)
+        edit_button.grid(row=0, column=2, rowspan=2, padx=8)
+        archive_button.grid(row=0, column=3, rowspan=2, padx=8)
+
+    def update_plant_frame(self, plant):
+        self.fill_plant_frame(self.frames[plant.id], plant)
+
+    def add_plant_frame(self, plant):
+        id = Label(self.main_frame, text=plant.id, font=("", 10, "bold"))
+        id.grid(row=self.row_num, column=0, sticky=N)
+        frame = LabelFrame(self.main_frame)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(row=self.row_num, column=1, sticky=W + E)
+        self.frames[plant.id] = frame
+        self.id_labels[plant.id] = id
+        self.fill_plant_frame(frame, plant)
+        self.row_num += 1
+
+    def scroll_to_bottom(self):
+        self.canvas.yview_moveto('1.0')
+
+    def edit_clicked(self, plant):
+        EditWindow(self, plant).transient(self)
+
+    def add_clicked(self):
+        self.edit_clicked(dansplants.get_empty_plant())
+
+    def archive_clicked(self, plant):
+        response = messagebox.askyesno("Are you sure?", "Really archive " + plant.name + "?", parent=self)
+        if response:
+            dansplants.archive_plant(plant.id)
+            self.frames[plant.id].destroy()
+            self.id_labels[plant.id].destroy()
+            self.frames.pop(plant.id)
+            self.id_labels.pop(plant.id)
+
+    def close(self, event=None):
+        refresh_main_window(self.master)
+        PopUpWindow.close(self, event)
+
+
+def open_config(mainwin):
+    ConfigWindow(mainwin).transient(mainwin)
+
+
+class AboutWindow(PopUpWindow):
+    def __init__(self, master, **kwargs):
+        PopUpWindow.__init__(self, master, **kwargs)
+        self.title("About Dansplants")
+        Label(self, text="Dansplants", font=("", 14)).grid(row=0, column=0, padx=10, pady=16)
+        Label(self, text="Copyright © 2022 Daniel Shapiro").grid(row=1, column=0, padx=10)
+        Label(self, text="Version " + dansplants.get_version()).grid(row=2, column=0, padx=10, pady=2)
+
 
 def open_about(mainwin):
     AboutWindow(mainwin).transient(mainwin)
@@ -317,6 +509,94 @@ def open_about(mainwin):
 def open_github():
     webbrowser.open_new("https://github.com/d-shapiro/dansplants")
 
+
+def setup_scrollable_frame(window):
+    def _bound_to_mousewheel(event):
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    def _unbound_to_mousewheel(event):
+        canvas.unbind_all("<MouseWheel>")
+
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    outer_frame = Frame(window)
+    outer_frame.pack(fill=BOTH, expand=1, padx=6, pady=6)
+    canvas = Canvas(outer_frame)
+    canvas.pack(side=LEFT, fill=BOTH, expand=1)
+    scrollbar = Scrollbar(outer_frame, orient=VERTICAL, command=canvas.yview)
+    scrollbar.pack(side=RIGHT, fill=Y)
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    main_frame = Frame(canvas)
+    canvas.create_window((0, 0), window=main_frame, anchor="nw")
+
+    main_frame.bind('<Enter>', _bound_to_mousewheel)
+    main_frame.bind('<Leave>', _unbound_to_mousewheel)
+    main_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    return main_frame, canvas
+
+def refresh_main_window(mainwin):
+    PICS_LIST = []
+    for widget in mainwin.winfo_children():
+        widget.destroy()
+    init_main_window(mainwin)
+
+def init_main_window(root):
+    main_frame, canvas = setup_scrollable_frame(root)
+
+    i = 0
+    for plant in dansplants.get_plant_list():
+        if plant.isActive:
+            waters = dansplants.get_last_water_entries(plant.id, 1)
+            last_water_text = waters[0]['date'] if waters else "_________"
+            ferts = dansplants.get_last_fert_entries(plant.id, 1)
+            last_fert_text = ferts[0]['date'] if ferts else "_________"
+            last_water_date = dansplants.parse_date(last_water_text)
+            last_fert_date = dansplants.parse_date(last_fert_text)
+            status_color = get_color(plant.waterRecDays, last_water_date)
+
+            frame = LabelFrame(main_frame)
+            frame.columnconfigure(1, weight=1)
+            frame.grid(row=i, column=0, sticky=W + E)
+
+            ref = Ref(plant, frame)
+
+            colorBar = get_color_bar(frame, status_color)
+            name = Label(frame, text=plant.name, font=("", 11, "bold"))
+            descr = Label(frame, text=plant.descr1, font=("", 10, "italic"))
+            lastWater = get_last_water_label(frame, last_water_text)
+            lastFert = get_last_fert_label(frame, last_fert_text)
+            expand_button = Button(frame, text="   \/   ", font=("", 7))
+            details_frame = get_details_frame(ref, expand_button)
+            expand_button.config(
+                command=lambda det_frame=details_frame, expand_button=expand_button: expand(det_frame, expand_button))
+            whbutton = Button(frame, text="History", font=("", 7), command=lambda ref=ref: open_water_history(ref))
+            fhbutton = Button(frame, text="History", font=("", 7), command=lambda ref=ref: open_fert_history(ref))
+            wbstate = DISABLED if date.today() == last_water_date else NORMAL
+            fbstate = NORMAL
+            waterButton = get_water_button(ref, wbstate)
+            waterDialogButton = Button(ref.frame, text="...", command=lambda ref=ref: water_dialog_click(ref),
+                                       bg="#96a2ff", font=("", 8, "bold"))
+            fertButton = get_fert_button(ref, fbstate)
+
+            pic = get_plant_pic(plant.id, PICS_LIST, DEFAULT_PIC_64)
+
+            pic_label = Label(frame, image=pic)
+            pic_label.grid(row=0, column=0, rowspan=3, padx=4)
+            name.grid(row=1, column=1, sticky=W)
+            place_water_stuff(lastWater, waterButton, colorBar)
+            expand_button.grid(row=2, column=2, padx=16)
+            waterDialogButton.grid(row=2, column=4, sticky=N + E + W, padx=8)
+            place_fert_stuff(lastFert)
+            fertButton.grid(row=1, column=6, rowspan=2, padx=8)
+            whbutton.grid(row=2, column=3, padx=16, sticky=E)
+            fhbutton.grid(row=2, column=5, padx=16, sticky=E)
+            descr.grid(row=2, column=1, sticky=N + W, padx=10)
+            i += 1
 
 dansplants.init()
 
@@ -326,13 +606,14 @@ root.iconbitmap("assets/icon.ico")
 root.geometry("900x900")
 wh_windows = {}
 fh_windows = {}
-default_pic = ImageTk.PhotoImage(image_in_circle(Image.open("assets/default_pic.png")))
+DEFAULT_PIC_64 = ImageTk.PhotoImage(image_in_circle(Image.open("assets/default_pic.png")))
+DEFAULT_PIC_32 = ImageTk.PhotoImage(image_in_circle(Image.open("assets/default_pic.png"), size=32))
 # necessary for very stupid reasons
-pics_list = []
+PICS_LIST = []
 
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
-# filemenu.add_command(label="Configure Plants", command=open_config)
+filemenu.add_command(label="Configure Plants", command=lambda mainwin=root: open_config(mainwin))
 filemenu.add_separator()
 filemenu.add_command(label="Exit", command=root.quit)
 menubar.add_cascade(label="File", menu=filemenu)
@@ -344,75 +625,6 @@ menubar.add_cascade(label="Help", menu=helpmenu)
 
 root.config(menu=menubar)
 
-outer_frame = Frame(root)
-outer_frame.pack(fill=BOTH, expand=1, padx=6, pady=6)
-canvas = Canvas(outer_frame)
-canvas.pack(side=LEFT, fill=BOTH, expand=1)
-scrollbar = Scrollbar(outer_frame, orient=VERTICAL, command=canvas.yview)
-scrollbar.pack(side=RIGHT, fill=Y)
-
-canvas.configure(yscrollcommand=scrollbar.set)
-canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-main_frame = Frame(canvas)
-canvas.create_window((0, 0), window=main_frame, anchor="nw")
-
-main_frame.bind('<Enter>', _bound_to_mousewheel)
-main_frame.bind('<Leave>', _unbound_to_mousewheel)
-main_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-i=0
-for plant in dansplants.get_plant_list():
-    if plant.isActive:
-        waters = dansplants.get_last_water_entries(plant.id, 1)
-        last_water_text = waters[0]['date'] if waters else "_________"
-        ferts = dansplants.get_last_fert_entries(plant.id, 1)
-        last_fert_text = ferts[0]['date'] if ferts else "_________"
-        last_water_date = dansplants.parse_date(last_water_text)
-        last_fert_date = dansplants.parse_date(last_fert_text)
-        status_color = get_color(plant.waterRecDays, last_water_date)
-
-        frame = LabelFrame(main_frame)
-        frame.columnconfigure(1, weight=1)
-        frame.grid(row=i, column=0, sticky=W+E)
-
-        ref = Ref(plant, frame)
-
-        colorBar = get_color_bar(frame, status_color)
-        name = Label(frame, text=plant.name, font=("", 11, "bold"))
-        descr = Label(frame, text=plant.descr1, font=("", 10, "italic"))
-        lastWater = get_last_water_label(frame, last_water_text)
-        lastFert = get_last_fert_label(frame, last_fert_text)
-        expand_button = Button(frame, text="   \/   ", font=("", 7))
-        details_frame = get_details_frame(ref, expand_button)
-        expand_button.config(command=lambda det_frame=details_frame, expand_button=expand_button: expand(det_frame, expand_button))
-        whbutton = Button(frame, text="History", font=("", 7), command=lambda ref=ref: open_water_history(ref))
-        fhbutton = Button(frame, text="History", font=("", 7), command=lambda ref=ref: open_fert_history(ref))
-        wbstate = DISABLED if date.today() == last_water_date else NORMAL
-        fbstate = NORMAL
-        waterButton = get_water_button(ref, wbstate)
-        waterDialogButton = Button(ref.frame, text="...", command=lambda ref=ref: water_dialog_click(ref), bg="#96a2ff", font=("", 8, "bold"))
-        fertButton = get_fert_button(ref, fbstate)
-
-        pic = default_pic
-        try:
-            sq_image = Image.open("plants/" + str(plant.id) + "/pic.png")
-            pic = ImageTk.PhotoImage(image_in_circle(sq_image))
-            pics_list.append(pic)
-        except FileNotFoundError:
-            pass
-
-        pic_label = Label(frame, image=pic)
-        pic_label.grid(row=0, column=0, rowspan=3, padx=4)
-        name.grid(row=1, column=1, sticky=W)
-        place_water_stuff(lastWater, waterButton, colorBar)
-        expand_button.grid(row=2, column=2, padx=16)
-        waterDialogButton.grid(row=2, column=4, sticky=N+E+W, padx=8)
-        place_fert_stuff(lastFert)
-        fertButton.grid(row=1, column=6, rowspan=2, padx=8)
-        whbutton.grid(row=2, column=3, padx=16, sticky=E)
-        fhbutton.grid(row=2, column=5, padx=16, sticky=E)
-        descr.grid(row=2, column=1, sticky=N+W, padx=10)
-        i += 1
+init_main_window(root)
 
 root.mainloop()

@@ -9,6 +9,7 @@ def get_version():
     with open("version") as verfile:
         return verfile.read().strip()
 
+
 class Plant:
     def __init__(self, dic):
         self.id = str_to_int_or_zero(dic["id"])
@@ -20,6 +21,17 @@ class Plant:
         self.waterRecDays = str_to_int_or_zero(dic["water_rec_days"])
         self.fertRecDays = str_to_int_or_zero(dic["fert_rec_days"])
         self.isActive = parse_bool(dic["is_active"])
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name, "descr_1": self.descr1, "descr_2": self.descr2,
+                "water_rec_txt": self.waterRecTxt, "fert_rec_txt": self.fertRecTxt,
+                "water_rec_days": str(self.waterRecDays),
+                "fert_rec_days": str(self.fertRecDays), "is_active": self.isActive}
+
+
+def get_empty_plant():
+    return Plant({"id": "0", "name": "", "descr_1": "", "descr_2": "", "water_rec_txt": "", "fert_rec_txt": "",
+                  "water_rec_days": "0", "fert_rec_days": "0", "is_active": "True"})
 
 
 def get_plant_list():
@@ -188,10 +200,10 @@ def view_plant(pid):
         elif choice.startswith("fert"):
             fert_plant_interactive(pid)
         elif choice == "archive":
-            archive_plant(pid)
+            archive_plant_prompted(pid)
             break
         elif choice == "delete":
-            delete_plant(pid)
+            delete_plant_prompted(pid)
             break
 
 
@@ -270,14 +282,18 @@ def fert_plant(pid, entry_date, notes):
 
 
 def archive_plant(pid):
+    remove_plant_in_list(pid, False)
+    shutil.move('plants/' + str(pid), 'plants/archive/' + str(pid))
+
+
+def archive_plant_prompted(pid):
     confirm = prompt("Are you sure you want to archive plant number " + str(pid) + "?").lower()
     if confirm.startswith("y"):
-        remove_plant_in_list(pid, False)
-        shutil.move('plants/' + str(pid), 'plants/archive/' + str(pid))
+        archive_plant(pid)
         print("plant was archived - to unarchive, dig through the files manually lol")
 
 
-def delete_plant(pid):
+def delete_plant_prompted(pid):
     confirm = prompt("Are you sure you want to permanently delete plant number " + str(pid) + "?").lower()
     if confirm.startswith("y"):
         remove_plant_in_list(pid, True)
@@ -299,6 +315,25 @@ def remove_plant_in_list(pid, perma_delete):
                 else:
                     writer.writerow(plant)
     shutil.move('plants/plants_temp.csv', 'plants/plants.csv')
+
+
+def update_plant(new_plant_dic):
+    with open('plants/plants.csv', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        with open('plants/plants_temp.csv', 'w', newline='') as tempfile:
+            writer = csv.DictWriter(tempfile, fieldnames=reader.fieldnames)
+            writer.writeheader()
+            for plant_dic in reader:
+                if plant_dic["id"] == new_plant_dic["id"]:
+                    writer.writerow(new_plant_dic)
+                else:
+                    writer.writerow(plant_dic)
+    shutil.move('plants/plants_temp.csv', 'plants/plants.csv')
+
+
+def set_plant_pic(pid, filepath):
+    to_path = "plants/" + str(pid) + "/pic.png"
+    shutil.copy(filepath, to_path)
 
 
 def select_date():
