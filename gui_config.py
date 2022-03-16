@@ -102,14 +102,16 @@ class EditWindow(gui_util.PopUpWindow):
             plant_dic = {"id": str(self.pid), "name": name_val, "descr_1": descr1_val,
                          "descr_2": descr2_val, "water_rec_txt": waterRecText_val, "fert_rec_txt": fertRecText_val,
                          "water_rec_days": waterRecNum_val, "fert_rec_days": fertRecNum_val, "is_active": "True"}
-            if len(self.new_pic_filename) > 0:
-                dansplants.set_plant_pic(self.pid, self.new_pic_filename)
             if self.is_new:
                 dansplants.add_plants([plant_dic])
+                if len(self.new_pic_filename) > 0:
+                    dansplants.set_plant_pic(self.pid, self.new_pic_filename)
                 self.master.add_plant_frame(dansplants.Plant(plant_dic))
                 self.master.scroll_to_bottom()
             else:
                 dansplants.update_plant(plant_dic)
+                if len(self.new_pic_filename) > 0:
+                    dansplants.set_plant_pic(self.pid, self.new_pic_filename)
                 self.master.update_plant_frame(dansplants.Plant(plant_dic))
             self.close()
 
