@@ -1,9 +1,10 @@
-import gui_util
 from tkinter import *
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import font
 from PIL import ImageTk, Image, ImageDraw, ImageChops
 import util
+import gui_util
 import dansplants
 
 
@@ -139,7 +140,8 @@ class ConfigWindow(gui_util.PopUpWindow):
 
     def fill_plant_frame(self, frame, plant):
         name = Label(frame, text=plant.name, font=("", 11, "bold"))
-        descr = Label(frame, text=plant.descr1, font=("", 10, "italic"))
+        descr_font = font.Font(font=("", 10, "italic"))
+        descr = Label(frame, text=util.pad_to_length(descr_font, plant.descr1, 288), font=descr_font)
         edit_button = Button(frame, text="Edit", command=lambda plant=plant: self.edit_clicked(plant), bg="#ffcb96",
                              font=("", 8, "bold"), padx=4, pady=4)
         archive_button = Button(frame, text="Archive", command=lambda plant=plant: self.archive_clicked(plant),

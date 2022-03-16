@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import font
 from tkcalendar import *
 import webbrowser
 import dansplants
@@ -302,7 +303,8 @@ class MainWindow(Tk):
 
                 colorBar = frame.get_color_bar(status_color)
                 name = Label(frame, text=plant.name, font=("", 11, "bold"))
-                descr = Label(frame, text=plant.descr1, font=("", 10, "italic"))
+                descr_font = font.Font(font=("", 10, "italic"))
+                descr = Label(frame, text=util.pad_to_length(descr_font, plant.descr1, 288), font=descr_font)
                 lastWater = frame.get_last_water_label(last_water_text)
                 lastFert = frame.get_last_fert_label(last_fert_text)
                 expand_button = Button(frame, text="   \/   ", font=("", 7))
