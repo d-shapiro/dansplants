@@ -39,10 +39,11 @@ def image_in_circle(im, size=64):
     return im
 
 
-def get_plant_pic(pid, pics_list, default_pic, size=64):
+def get_plant_pic(pid, pics_list, default_pic, is_active=True, size=64):
     pic = default_pic
+    prefix = "plants/" if is_active else "plants/archive/"
     try:
-        sq_image = Image.open("plants/" + str(pid) + "/pic.png")
+        sq_image = Image.open(prefix + str(pid) + "/pic.png")
         pic = ImageTk.PhotoImage(image_in_circle(sq_image, size))
         pics_list.append(pic)
     except FileNotFoundError:

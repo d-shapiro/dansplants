@@ -10,7 +10,9 @@ You must have python3 installed. I have only tested on Windows so far, although 
 
 Launch the GUI by running `dansplants.bat` (if on Windows) or by running `python gui.py`. The GUI allows you to view information about your plants, record waterings and fertilizings, and view watering and fertilizing histories for your plants.
 
-Go to `File -> Configure Plants` to open the plant configuration window. Here you can add plants to be tracked, and edit or archive existing plants. Archiving a plant will remove it from view but keep its data in local storage. The ability to view and interact with the archive is coming soon.
+Go to `File -> Configure Plants` to open the plant configuration window. Here you can add plants to be tracked, and edit or archive existing plants. Archiving a plant will remove it from view but keep its data in local storage.
+
+Go to `File -> View Archive` to see the list of archived plants. From here you can restore them or delete them permanently, removing all of their data from local storage.
 
 There is also an interactive command-line interface which you can launch with `python cli.py`. It is not very user-friendly and does not have much of a purpose.
 

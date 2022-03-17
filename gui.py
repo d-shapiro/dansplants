@@ -4,6 +4,7 @@ from tkinter import font
 from tkcalendar import *
 import webbrowser
 import dansplants
+import gui_archive
 import util
 import gui_util
 import gui_about
@@ -150,8 +151,7 @@ class PlantFrame(LabelFrame):
         return Label(self, text="  Last Fertilizing:  " + date_text + "  ", font=("", 9, "bold"), relief="groove")
 
     def get_water_button(self, state):
-        return Button(self, text="Water", state=state, command=self.waterClick, bg="#96a2ff",
-                      font=("", 8, "bold"))
+        return Button(self, text="Water", state=state, command=self.waterClick, bg="#96a2ff", font=("", 8, "bold"))
 
     def get_fert_button(self, state):
         return Button(self, text="Fertilize\n...", state=state, command=self.fert_dialog_click, bg="#cba1ff",
@@ -194,7 +194,6 @@ class PlantFrame(LabelFrame):
         submit_button = Button(button_frame, text="Record " + noun,
                                command=lambda win=entry_win, cal=cal, notes=notes_field,
                                               is_fert=is_fert: self.submit_entry(win, cal, notes, is_fert))
-
         date_picker_label.grid(row=0, column=0, padx=10, pady=10, sticky=N + E)
         cal.grid(row=0, column=1, padx=10, pady=10)
         notes_label.grid(row=1, column=0, padx=10, pady=10, sticky=N + E)
@@ -246,6 +245,9 @@ class MainWindow(Tk):
     def open_config(self):
         gui_config.ConfigWindow(self).transient(self)
 
+    def open_archive(self):
+        gui_archive.ArchiveWindow(self).transient(self)
+
     def open_about(self):
         gui_about.AboutWindow(self).transient(self)
 
@@ -273,6 +275,7 @@ class MainWindow(Tk):
         menubar = Menu(self)
         filemenu = Menu(menubar, tearoff=0)
         filemenu.add_command(label="Configure Plants", command=self.open_config)
+        filemenu.add_command(label="View Archive", command=self.open_archive)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.quit)
         menubar.add_cascade(label="File", menu=filemenu)
@@ -333,6 +336,7 @@ class MainWindow(Tk):
                 fhbutton.grid(row=2, column=5, padx=16, sticky=E)
                 descr.grid(row=2, column=1, sticky=N + W, padx=10)
                 i += 1
+        self.lift()
 
 
 dansplants.init()

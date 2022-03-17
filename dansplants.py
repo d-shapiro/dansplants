@@ -39,7 +39,9 @@ def init():
     os.makedirs('plants/archive/', exist_ok=True)
     if not os.path.isfile('plants/plants.csv'):
         with open('plants/plants.csv', 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=["id", "name", "descr_1", "descr_2", "water_rec_txt", "water_rec_days", "fert_rec_txt", "fert_rec_days", "is_active"])
+            writer = csv.DictWriter(csvfile,
+                                    fieldnames=["id", "name", "descr_1", "descr_2", "water_rec_txt", "water_rec_days",
+                                                "fert_rec_txt", "fert_rec_days", "is_active"])
             writer.writeheader()
 
 
@@ -150,17 +152,22 @@ def fert_plant(pid, entry_date, notes):
 
 
 def archive_plant(pid):
-    remove_plant_in_list(pid, False)
+    delete_archive_or_restore_in_list(pid, perma_delete=False, restore=False)
     shutil.move('plants/' + str(pid), 'plants/archive/' + str(pid))
 
 
+def restore_plant(pid):
+    delete_archive_or_restore_in_list(pid, perma_delete=False, restore=True)
+    shutil.move('plants/archive/' + str(pid), 'plants/' + str(pid))
+
+
 def delete_plant(pid):
-    remove_plant_in_list(pid, True)
+    delete_archive_or_restore_in_list(pid, perma_delete=True, restore=False)
     shutil.rmtree('plants/' + str(pid), ignore_errors=True)
     shutil.rmtree('plants/archive/' + str(pid), ignore_errors=True)
 
 
-def remove_plant_in_list(pid, perma_delete):
+def delete_archive_or_restore_in_list(pid, perma_delete, restore):
     with open('plants/plants.csv', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         with open('plants/plants_temp.csv', 'w', newline='') as tempfile:
@@ -169,7 +176,7 @@ def remove_plant_in_list(pid, perma_delete):
             for plant in reader:
                 if int(plant["id"]) == pid:
                     if not perma_delete:
-                        plant["is_active"] = False
+                        plant["is_active"] = restore
                         writer.writerow(plant)
                 else:
                     writer.writerow(plant)
